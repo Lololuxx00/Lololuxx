@@ -223,7 +223,7 @@ client.on(Events.InteractionCreate, async interaction => {
             const row3 = new ActionRowBuilder().addComponents(
          new ButtonBuilder()
         .setCustomId("tunnelbear")
-        .setLabel("TunnelBear VPN")
+        .setLabel("TunnelBear")
         .setEmoji("🐻")
         .setStyle(ButtonStyle.Danger),
 

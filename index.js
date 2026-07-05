@@ -20,13 +20,18 @@ const NO_COOLDOWN_ROLES = ["1523272559510945812"];
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 
+// ⏳ cooldown
 const cooldown = new Map();
 
 // 🔧 stock function
 function getStock(service) {
-    let path = `./stocks/${service}.txt`;
+    const path = `./stocks/${service}.txt`;
 
-    let stock = fs.readFileSync(path, "utf8")
+    if (!fs.existsSync(path)) {
+        fs.writeFileSync(path, "");
+    }
+
+    const stock = fs.readFileSync(path, "utf8")
         .split("\n")
         .filter(Boolean);
 
@@ -57,17 +62,17 @@ client.on(Events.InteractionCreate, async interaction => {
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId("steam").setLabel("Steam").setEmoji("🎮").setStyle(ButtonStyle.Primary),
-                new ButtonBuilder().setCustomId("crunchyroll").setLabel("Crunchyroll").setEmoji("📺").setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId("crunchyroll").setLabel("Crunchyroll").setEmoji("📺").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("adn").setLabel("ADN").setEmoji("🎬").setStyle(ButtonStyle.Secondary)
             );
 
             const row2 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId("adn").setLabel("ADN").setEmoji("🎬").setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId("duolingo").setLabel("Duolingo").setEmoji("🐸").setStyle(ButtonStyle.Success),
-                new ButtonBuilder().setCustomId("otacos").setLabel("O'Tacos").setEmoji("🌮").setStyle(ButtonStyle.Primary)
+                new ButtonBuilder().setCustomId("otacos").setLabel("O'Tacos").setEmoji("🌮").setStyle(ButtonStyle.Primary),
+                new ButtonBuilder().setCustomId("tunnelbear").setLabel("TunnelBear").setEmoji("🐻").setStyle(ButtonStyle.Danger)
             );
 
             const row3 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId("tunnelbear").setLabel("TunnelBear").setEmoji("🐻").setStyle(ButtonStyle.Danger),
                 new ButtonBuilder().setCustomId("disney").setLabel("Disney+").setEmoji("🏰").setStyle(ButtonStyle.Primary)
             );
 
@@ -92,9 +97,9 @@ client.on(Events.InteractionCreate, async interaction => {
             let desc = "";
 
             for (let s of services) {
-                let file = `./stocks/${s}.txt`;
+                const file = `./stocks/${s}.txt`;
 
-                let count = fs.existsSync(file)
+                const count = fs.existsSync(file)
                     ? fs.readFileSync(file, "utf8").split("\n").filter(Boolean).length
                     : 0;
 
@@ -151,16 +156,22 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (!services.includes(interaction.customId)) return;
 
-        let { stock, path } = getStock(interaction.customId);
+        const { stock, path } = getStock(interaction.customId);
 
         if (stock.length === 0) {
-            return interaction.reply({ content: "❌ Plus de stock.", ephemeral: true });
+            return interaction.reply({
+                content: "❌ Plus de stock.",
+                ephemeral: true
+            });
         }
 
-        let account = stock.shift();
+        const account = stock.shift();
+
         fs.writeFileSync(path, stock.join("\n"));
 
-        await interaction.user.send(`🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``);
+        await interaction.user.send(
+            `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
+        );
 
         return interaction.reply({
             content: "📩 Envoyé en MP !",

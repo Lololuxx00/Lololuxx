@@ -11,16 +11,20 @@ const {
     ButtonStyle
 } = require("discord.js");
 
+// =====================
+// CLIENT
+// =====================
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
-// 👑 config
+// =====================
+// CONFIG
+// =====================
 const NO_COOLDOWN_ROLES = ["1523272559510945812"];
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 
-// ⏳ cooldown
 const cooldown = new Map();
 
 // =====================
@@ -130,7 +134,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
                 return interaction.reply({
-                    content: "Tu n'as pas la permission.",
+                    content: "🚫 Tu n'as pas la permission.",
                     ephemeral: true
                 });
             }
@@ -150,7 +154,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     // =====================
-    // BUTTONS (GEN)
+    // BUTTONS
     // =====================
     if (interaction.isButton()) {
 
@@ -166,28 +170,61 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (!services.includes(interaction.customId)) return;
 
+        // =====================
+        // COOLDOWN 7 MIN
+        // =====================
+        const userId = interaction.user.id;
+        const now = Date.now();
+        const cooldownTime = 7 * 60 * 1000;
+
+        const member = interaction.member;
+
+        const bypass = NO_COOLDOWN_ROLES.some(role =>
+            member.roles.cache.has(role)
+        );
+
+        if (!bypass) {
+
+            if (cooldown.has(userId)) {
+                const expire = cooldown.get(userId);
+
+                if (now < expire) {
+                    const remaining = Math.ceil((expire - now) / 1000);
+
+                    return interaction.reply({
+                        content: `⏳ Attends encore ${remaining}s`,
+                        ephemeral: true
+                    });
+                }
+            }
+
+            cooldown.set(userId, now + cooldownTime);
+        }
+
+        // =====================
+        // STOCK
+        // =====================
         const { stock, path } = getStock(interaction.customId);
 
         if (stock.length === 0) {
             return interaction.reply({
-                content: "Plus de stock.",
+                content: "❌ Plus de stock.",
                 ephemeral: true
             });
         }
 
         const account = stock.shift();
-
         fs.writeFileSync(path, stock.join("\n"));
 
         // =====================
-        // DM USER
+        // DM
         // =====================
         await interaction.user.send(
             `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
         ).catch(() => null);
 
         // =====================
-        // LOGS FIXED
+        // LOGS
         // =====================
         const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
 
@@ -198,7 +235,7 @@ client.on(Events.InteractionCreate, async interaction => {
                         .setColor("Orange")
                         .setTitle("📦 Génération")
                         .addFields(
-                            { name: "User", value: `${interaction.user.tag}`, inline: true },
+                            { name: "User", value: interaction.user.tag, inline: true },
                             { name: "Service", value: interaction.customId, inline: true },
                             { name: "Compte", value: `||${account}||` }
                         )
@@ -208,10 +245,13 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         return interaction.reply({
-            content: "Envoyé en MP !",
+            content: "📩 Envoyé en MP !",
             ephemeral: true
         });
     }
 });
 
+// =====================
+// LOGIN
+// =====================
 client.login(process.env.TOKEN);

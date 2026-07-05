@@ -15,7 +15,7 @@ const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
-// 👑 rôles bypass cooldown
+// 👑 config
 const NO_COOLDOWN_ROLES = ["1523272559510945812"];
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
@@ -23,7 +23,9 @@ const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 // ⏳ cooldown
 const cooldown = new Map();
 
-// 🔧 stock function
+// =====================
+// STOCK SYSTEM
+// =====================
 function getStock(service) {
     const path = `./stocks/${service}.txt`;
 
@@ -38,10 +40,16 @@ function getStock(service) {
     return { stock, path };
 }
 
+// =====================
+// READY
+// =====================
 client.once(Events.ClientReady, () => {
     console.log(`✅ ${client.user.tag} connecté`);
 });
 
+// =====================
+// INTERACTIONS
+// =====================
 client.on(Events.InteractionCreate, async interaction => {
 
     // =====================
@@ -49,10 +57,12 @@ client.on(Events.InteractionCreate, async interaction => {
     // =====================
     if (interaction.isChatInputCommand()) {
 
+        // /ping
         if (interaction.commandName === "ping") {
             return interaction.reply("🏓 Pong !");
         }
 
+        // /panel
         if (interaction.commandName === "panel") {
 
             const embed = new EmbedBuilder()
@@ -60,7 +70,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 .setTitle("⚡ Panel de génération")
                 .setDescription("Choisissez un service.");
 
-            const row = new ActionRowBuilder().addComponents(
+            const row1 = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId("steam").setLabel("Steam").setEmoji("🎮").setStyle(ButtonStyle.Primary),
                 new ButtonBuilder().setCustomId("crunchyroll").setLabel("Crunchyroll").setEmoji("📺").setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId("adn").setLabel("ADN").setEmoji("🎬").setStyle(ButtonStyle.Secondary)
@@ -78,10 +88,11 @@ client.on(Events.InteractionCreate, async interaction => {
 
             return interaction.reply({
                 embeds: [embed],
-                components: [row, row2, row3]
+                components: [row1, row2, row3]
             });
         }
 
+        // /stock
         if (interaction.commandName === "stock") {
 
             const services = [
@@ -114,18 +125,17 @@ client.on(Events.InteractionCreate, async interaction => {
             return interaction.reply({ embeds: [embed] });
         }
 
+        // /addstock
         if (interaction.commandName === "addstock") {
 
-            const member = interaction.member;
-
-            if (!member.roles.cache.has(ADMIN_ROLE_ID)) {
+            if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
                 return interaction.reply({
                     content: "🚫 Tu n'as pas la permission.",
                     ephemeral: true
                 });
             }
 
-            const service = interaction.options.getString("service");
+            const service = interaction.options.getString("service").toLowerCase();
             const stockValue = interaction.options.getString("stock");
 
             const path = `./stocks/${service}.txt`;
@@ -140,7 +150,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     // =====================
-    // BUTTONS
+    // BUTTONS (GEN)
     // =====================
     if (interaction.isButton()) {
 
@@ -169,9 +179,33 @@ client.on(Events.InteractionCreate, async interaction => {
 
         fs.writeFileSync(path, stock.join("\n"));
 
+        // =====================
+        // DM USER
+        // =====================
         await interaction.user.send(
             `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
-        );
+        ).catch(() => null);
+
+        // =====================
+        // LOGS FIXED
+        // =====================
+        const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
+
+        if (logChannel) {
+            logChannel.send({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor("Orange")
+                        .setTitle("📦 Génération")
+                        .addFields(
+                            { name: "User", value: `${interaction.user.tag}`, inline: true },
+                            { name: "Service", value: interaction.customId, inline: true },
+                            { name: "Compte", value: `||${account}||` }
+                        )
+                        .setTimestamp()
+                ]
+            });
+        }
 
         return interaction.reply({
             content: "📩 Envoyé en MP !",

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,12 +16,8 @@
     "discord-api-types": "^0.38.49",
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
-    
     "express": "^5.2.1",
     "mongodb": "^7.4.0"
-
-    "express": "^5.2.1"
-
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

@@ -79,7 +79,7 @@ client.on(Events.InteractionCreate, async interaction => {
             const row2 = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId("duolingo").setLabel("Duolingo").setEmoji("🐸").setStyle(ButtonStyle.Success),
                 new ButtonBuilder().setCustomId("otacos").setLabel("O'Tacos").setEmoji("🌮").setStyle(ButtonStyle.Primary),
-                new ButtonBuilder().setCustomId("tunnelbear").setLabel("TunnelBear").setEmoji("🐻").setStyle(ButtonStyle.Danger)
+                new ButtonBuilder().setCustomId("deezer").setLabel("Deezer").setEmoji("🎶").setStyle(ButtonStyle.Danger)
             );
 
             const row3 = new ActionRowBuilder().addComponents(
@@ -101,7 +101,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 "adn",
                 "duolingo",
                 "otacos",
-                "tunnelbear",
+                "deezer",
                 "disney"
             ];
 
@@ -130,7 +130,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
                 return interaction.reply({
-                    content: "🚫 Tu n'as pas la permission.",
+                    content: "Tu n'as pas la permission.",
                     ephemeral: true
                 });
             }
@@ -160,7 +160,7 @@ client.on(Events.InteractionCreate, async interaction => {
             "adn",
             "duolingo",
             "otacos",
-            "tunnelbear",
+            "deezer",
             "disney"
         ];
 
@@ -170,7 +170,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (stock.length === 0) {
             return interaction.reply({
-                content: "❌ Plus de stock.",
+                content: "Plus de stock.",
                 ephemeral: true
             });
         }
@@ -208,7 +208,7 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         return interaction.reply({
-            content: "📩 Envoyé en MP !",
+            content: "Envoyé en MP !",
             ephemeral: true
         });
     }

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 require("dotenv").config();
 
 const { MongoClient } = require("mongodb");
@@ -143,7 +142,6 @@ if (interaction.isButton()) {
 
 });
 
-=======
 require("dotenv").config();
 
 const {
@@ -223,8 +221,18 @@ client.on(Events.InteractionCreate, async interaction => {
             );
 
             const row3 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId("tunnelbear").setLabel("TunnelBear VPN").setEmoji("🐻").setStyle(ButtonStyle.Danger)
-            );
+         new ButtonBuilder()
+        .setCustomId("tunnelbear")
+        .setLabel("TunnelBear VPN")
+        .setEmoji("🐻")
+        .setStyle(ButtonStyle.Danger),
+
+    new ButtonBuilder()
+        .setCustomId("disney")
+        .setLabel("Disney+")
+        .setEmoji("🏰")
+        .setStyle(ButtonStyle.Primary)
+);
 
             return interaction.reply({
                 embeds: [embed],
@@ -307,7 +315,8 @@ client.on(Events.InteractionCreate, async interaction => {
             "adn",
             "duolingo",
             "otacos",
-            "tunnelbear"
+            "tunnelbear",
+            "disney"
         ];
 
         if (!services.includes(interaction.customId)) return;
@@ -389,5 +398,4 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
->>>>>>> f0e516e748b4c60f8c9c7a4aea40baefe997c30a
 client.login(process.env.TOKEN);

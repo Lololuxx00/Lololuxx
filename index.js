@@ -15,7 +15,11 @@ const {
 // CLIENT
 // =====================
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildPresences
+    ]
 });
 
 // =====================
@@ -173,6 +177,20 @@ if (interaction.isButton()) {
 
     const member = interaction.guild.members.cache.get(userId);
     if (!member) return;
+
+// =====================
+// VÉRIFICATION DU STATUT
+// =====================
+const customStatus = member.presence?.activities.find(
+    activity => activity.type === 4
+);
+
+if (!customStatus || !customStatus.state?.includes(".gg/te6WVUgyD9")) {
+    return interaction.reply({
+        content: "❌ Tu dois mettre `.gg/te6WVUgyD9` dans ton statut Discord avant de générer un compte.",
+        ephemeral: true
+    });
+}
 
     const bypass = NO_COOLDOWN_ROLES.some(role =>
         member.roles.cache.has(role)

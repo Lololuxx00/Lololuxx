@@ -208,7 +208,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (stock.length === 0) {
             return interaction.reply({
-                content: "❌ Plus de stock.",
+                content: "Plus de stock.",
                 ephemeral: true
             });
         }

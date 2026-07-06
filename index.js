@@ -22,8 +22,10 @@ const client = new Client({
 // CONFIG
 // =====================
 const NO_COOLDOWN_ROLES = ["1523272559510945812"];
+const VIP_ROLE_ID = "1523524520860848238";
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
+const VIP_ROLE_ID = process.env.VIP_ROLE_ID;
 
 const cooldown = new Map();
 
@@ -154,52 +156,150 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     // =====================
-    // BUTTONS
+// BUTTONS
+// =====================
+if (interaction.isButton()) {
+
+    const services = [
+        "steam",
+        "crunchyroll",
+        "adn",
+        "duolingo",
+        "otacos",
+        "deezer",
+        "disney"
+    ];
+
+    if (!services.includes(interaction.customId)) return;
+
+    const userId = interaction.user.id;
+    const now = Date.now();
+    let cooldownTime = 7 * 60 * 1000;
+
+if (member.roles.cache.has(VIP_ROLE_ID)) {
+    cooldownTime = 3 * 60 * 1000;
+}
+
+    const member = interaction.member;
+
+    const bypass = NO_COOLDOWN_ROLES.some(role =>
+        member.roles.cache.has(role)
+    );
+
     // =====================
-    if (interaction.isButton()) {
+    // COOLDOWN
+    // =====================
+    if (!bypass) {
 
-        const services = [
-            "steam",
-            "crunchyroll",
-            "adn",
-            "duolingo",
-            "otacos",
-            "deezer",
-            "disney"
-        ];
+        if (cooldown.has(userId)) {
 
-        if (!services.includes(interaction.customId)) return;
+            const expire = cooldown.get(userId);
 
-        // =====================
-        // COOLDOWN 7 MIN
-        // =====================
-        const userId = interaction.user.id;
-        const now = Date.now();
-        const cooldownTime = 7 * 60 * 1000;
+            if (now < expire) {
 
-        const member = interaction.member;
+                const remaining = Math.ceil((expire - now) / 1000);
 
-        const bypass = NO_COOLDOWN_ROLES.some(role =>
-            member.roles.cache.has(role)
-        );
-
-        if (!bypass) {
-
-            if (cooldown.has(userId)) {
-                const expire = cooldown.get(userId);
-
-                if (now < expire) {
-                    const remaining = Math.ceil((expire - now) / 1000);
-
-                    return interaction.reply({
-                        content: `⏳ Attends encore ${remaining}s`,
-                        ephemeral: true
-                    });
-                }
+                return interaction.reply({
+                    content: `⏳ Attends encore ${remaining}s`,
+                    ephemeral: true
+                });
             }
 
-            cooldown.set(userId, now + cooldownTime);
         }
+
+    }
+
+    // =====================
+    // STOCK
+    // =====================
+    const { stock, path } = getStock(interaction.customId);
+
+    if (stock.length === 0) {
+        return interaction.reply({
+            content: "❌ Plus de stock.",
+            ephemeral: true
+        });
+    }
+
+    // On récupère le compte
+    const account = stock.shift();
+
+    // Sauvegarde du stock
+    fs.writeFileSync(path, stock.join("\n"));
+
+    // =====================
+    // COOLDOWN
+    // =====================
+    if (!bypass) {
+        cooldown.set(userId, now + cooldownTime);
+    }
+
+    // =====================
+    // DM
+    // =====================
+    try {
+
+        await interaction.user.send(
+            `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
+        );
+
+    } catch {
+
+        // Si les MP sont fermés on remet le compte dans le stock
+        stock.unshift(account);
+        fs.writeFileSync(path, stock.join("\n"));
+
+        if (!bypass) {
+            cooldown.delete(userId);
+        }
+
+        return interaction.reply({
+            content: "❌ Active tes messages privés pour recevoir ton compte.",
+            ephemeral: true
+        });
+
+    }
+
+    // =====================
+    // LOGS
+    // =====================
+    const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
+
+    if (logChannel) {
+
+        logChannel.send({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor("Orange")
+                    .setTitle("📦 Génération")
+                    .addFields(
+                        {
+                            name: "Utilisateur",
+                            value: interaction.user.tag,
+                            inline: true
+                        },
+                        {
+                            name: "Service",
+                            value: interaction.customId,
+                            inline: true
+                        },
+                        {
+                            name: "Compte",
+                            value: `||${account}||`
+                        }
+                    )
+                    .setTimestamp()
+            ]
+        });
+
+    }
+
+    return interaction.reply({
+        content: "📩 Ton compte a été envoyé en message privé !",
+        ephemeral: true
+    });
+
+}
 
         // =====================
         // STOCK
@@ -244,12 +344,8 @@ client.on(Events.InteractionCreate, async interaction => {
             });
         }
 
-        return interaction.reply({
-            content: "📩 Envoyé en MP !",
-            ephemeral: true
-        });
     }
-});
+);
 
 // =====================
 // LOGIN

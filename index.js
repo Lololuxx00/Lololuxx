@@ -193,7 +193,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 const remaining = Math.ceil((expire - now) / 1000);
 
                 return interaction.reply({
-                    content: `⏳ Attends encore ${remaining}s`,
+                    content: `Attends encore ${remaining}s`,
                     ephemeral: true
                 });
             }
@@ -206,7 +206,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (stock.length === 0) {
             return interaction.reply({
-                content: "❌ Plus de stock.",
+                content: "Plus de stock.",
                 ephemeral: true
             });
         }
@@ -226,7 +226,7 @@ client.on(Events.InteractionCreate, async interaction => {
         // =====================
         try {
             await interaction.user.send(
-                `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
+                `**${interaction.customId.toUpperCase()}**\n\`${account}\``
             );
         } catch {
             stock.unshift(account);
@@ -235,7 +235,7 @@ client.on(Events.InteractionCreate, async interaction => {
             if (!bypass) cooldown.delete(userId);
 
             return interaction.reply({
-                content: "❌ Active tes messages privés.",
+                content: "Active tes messages privés.",
                 ephemeral: true
             });
         }
@@ -262,7 +262,7 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         return interaction.reply({
-            content: "📩 Ton compte a été envoyé en MP !",
+            content: "Ton compte a été envoyé en MP !",
             ephemeral: true
         });
     }

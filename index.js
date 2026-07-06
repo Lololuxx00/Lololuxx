@@ -173,9 +173,12 @@ if (interaction.isButton()) {
 
     const userId = interaction.user.id;
     const now = Date.now();
+
+    const member = interaction.member;
+
     let cooldownTime = 7 * 60 * 1000;
 
-if (member.roles.cache.has(VIP_ROLE_ID)) {
+    if (member.roles.cache.has(VIP_ROLE_ID)) {
     cooldownTime = 3 * 60 * 1000;
 }
 

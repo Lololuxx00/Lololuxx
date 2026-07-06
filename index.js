@@ -27,6 +27,7 @@ const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 const VIP_ROLE_ID = process.env.VIP_ROLE_ID;
 
 const cooldown = new Map();
+const processing = new Set(); // 🔥 anti double click
 
 // =====================
 // STOCK SYSTEM
@@ -184,100 +185,93 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         // =====================
-        // COOLDOWN CHECK
+        // 🔥 ANTI DOUBLE CLICK
         // =====================
-        if (!bypass) {
-            const expire = cooldown.get(userId);
+        if (processing.has(userId)) return;
+        processing.add(userId);
 
-            if (expire && now < expire) {
-                const remaining = Math.ceil((expire - now) / 1000);
+        try {
 
+            // =====================
+            // COOLDOWN CHECK (IMPORTANT FIX)
+            // =====================
+            if (!bypass) {
+                const expire = cooldown.get(userId);
+
+                if (expire && now < expire) {
+                    const remaining = Math.ceil((expire - now) / 1000);
+                    return interaction.reply({
+                        content: `Attends encore ${remaining}s`,
+                        ephemeral: true
+                    });
+                }
+
+                // 🔥 LOCK DIRECT ICI (IMPORTANT FIX)
+                cooldown.set(userId, now + cooldownTime);
+            }
+
+            // =====================
+            // STOCK
+            // =====================
+            const { stock, path } = getStock(interaction.customId);
+
+            if (stock.length === 0) {
                 return interaction.reply({
-                    content: `Attends encore ${remaining}s`,
+                    content: "Plus de stock.",
                     ephemeral: true
                 });
             }
-        }
 
-        // =====================
-        // STOCK
-        // =====================
-        const { stock, path } = getStock(interaction.customId);
+            const account = stock.shift();
+            fs.writeFileSync(path, stock.join("\n"));
 
-        if (stock.length === 0) {
-            return interaction.reply({
-                content: "Plus de stock.",
-                ephemeral: true
-            });
-        }
-
-        const account = stock.shift();
-        fs.writeFileSync(path, stock.join("\n"));
-
-        // =====================
-        // SET COOLDOWN
-        // =====================
-        if (!bypass) {
-            cooldown.set(userId, now + cooldownTime);
-        }
-
-        // =====================
-        // DM (VERSION PRO EMBED)
-        // =====================
-        try {
+            // =====================
+            // DM
+            // =====================
             await interaction.user.send({
                 embeds: [
                     new EmbedBuilder()
                         .setColor("Gold")
                         .setTitle("Génération réussie !")
                         .setDescription(`Voici ton compte pour **${interaction.customId}**`)
-                        .addFields(
-                            {
-                                name: "Compte",
-                                value: `\`\`\`${account}\`\`\``
-                            }
-                        )
-                        .setFooter({ text: "Merci d'utiliser notre bot ! N'oublie pas ta pr00f" })
+                        .addFields({
+                            name: "Compte",
+                            value: `\`\`\`${account}\`\`\``
+                        })
+                        .setFooter({ text: "Merci d'utiliser notre bot !" })
                         .setTimestamp()
                 ]
             });
-        } catch {
-            stock.unshift(account);
-            fs.writeFileSync(path, stock.join("\n"));
 
-            if (!bypass) cooldown.delete(userId);
+            // =====================
+            // LOGS
+            // =====================
+            const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
+
+            if (logChannel) {
+                logChannel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor("Orange")
+                            .setTitle("📦 Génération")
+                            .addFields(
+                                { name: "Utilisateur", value: interaction.user.tag, inline: true },
+                                { name: "Service", value: interaction.customId, inline: true },
+                                { name: "Compte", value: `||${account}||` }
+                            )
+                            .setTimestamp()
+                    ]
+                });
+            }
 
             return interaction.reply({
-                content: "Active tes messages privés.",
+                content: "Ton compte a été envoyé en MP !",
                 ephemeral: true
             });
+
+        } finally {
+            processing.delete(userId);
         }
-
-        // =====================
-        // LOGS
-        // =====================
-        const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
-
-        if (logChannel) {
-            logChannel.send({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor("Orange")
-                        .setTitle("📦 Génération")
-                        .addFields(
-                            { name: "Utilisateur", value: interaction.user.tag, inline: true },
-                            { name: "Service", value: interaction.customId, inline: true },
-                            { name: "Compte", value: `||${account}||` }
-                        )
-                        .setTimestamp()
-                ]
-            });
-        }
-
-        return interaction.reply({
-            content: "Ton compte a été envoyé en MP !",
-            ephemeral: true
-        });
     }
 });
 

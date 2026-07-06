@@ -58,7 +58,7 @@ client.once(Events.ClientReady, () => {
 client.on(Events.InteractionCreate, async interaction => {
 
     // =====================
-    // SLASH COMMANDS
+    // COMMANDS
     // =====================
     if (interaction.isChatInputCommand()) {
 
@@ -222,12 +222,25 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         // =====================
-        // DM USER
+        // DM (VERSION PRO EMBED)
         // =====================
         try {
-            await interaction.user.send(
-                `**${interaction.customId.toUpperCase()}**\n\`${account}\``
-            );
+            await interaction.user.send({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor("Gold")
+                        .setTitle("Génération réussie !")
+                        .setDescription(`Voici ton compte pour **${interaction.customId}**`)
+                        .addFields(
+                            {
+                                name: "Compte",
+                                value: `\`\`\`${account}\`\`\``
+                            }
+                        )
+                        .setFooter({ text: "Merci d'utiliser notre bot ! N'oublie pas ta pr00f" })
+                        .setTimestamp()
+                ]
+            });
         } catch {
             stock.unshift(account);
             fs.writeFileSync(path, stock.join("\n"));

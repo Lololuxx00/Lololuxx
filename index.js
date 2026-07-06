@@ -58,16 +58,14 @@ client.once(Events.ClientReady, () => {
 client.on(Events.InteractionCreate, async interaction => {
 
     // =====================
-    // COMMANDES
+    // SLASH COMMANDS
     // =====================
     if (interaction.isChatInputCommand()) {
 
-        // /ping
         if (interaction.commandName === "ping") {
             return interaction.reply("🏓 Pong !");
         }
 
-        // /panel
         if (interaction.commandName === "panel") {
 
             const embed = new EmbedBuilder()
@@ -97,7 +95,6 @@ client.on(Events.InteractionCreate, async interaction => {
             });
         }
 
-        // /stock
         if (interaction.commandName === "stock") {
 
             const services = [
@@ -130,7 +127,6 @@ client.on(Events.InteractionCreate, async interaction => {
             return interaction.reply({ embeds: [embed] });
         }
 
-        // /addstock
         if (interaction.commandName === "addstock") {
 
             if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
@@ -155,50 +151,45 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     // =====================
-// BUTTONS
-// =====================
-if (interaction.isButton()) {
-
-    const services = [
-        "steam",
-        "crunchyroll",
-        "adn",
-        "duolingo",
-        "otacos",
-        "deezer",
-        "disney"
-    ];
-
-    if (!services.includes(interaction.customId)) return;
-
-    const userId = interaction.user.id;
-    const now = Date.now();
-
-    const member = interaction.member;
-
-    let cooldownTime = 7 * 60 * 1000;
-
-    if (member.roles.cache.has(VIP_ROLE_ID)) {
-    cooldownTime = 3 * 60 * 1000;
-}
-
-    const member = interaction.member;
-
-    const bypass = NO_COOLDOWN_ROLES.some(role =>
-        member.roles.cache.has(role)
-    );
-
+    // BUTTONS
     // =====================
-    // COOLDOWN
-    // =====================
-    if (!bypass) {
+    if (interaction.isButton()) {
 
-        if (cooldown.has(userId)) {
+        const services = [
+            "steam",
+            "crunchyroll",
+            "adn",
+            "duolingo",
+            "otacos",
+            "deezer",
+            "disney"
+        ];
 
+        if (!services.includes(interaction.customId)) return;
+
+        const userId = interaction.user.id;
+        const now = Date.now();
+
+        const member = interaction.guild?.members?.cache.get(userId);
+        if (!member) return;
+
+        const bypass = NO_COOLDOWN_ROLES.some(role =>
+            member.roles.cache.has(role)
+        );
+
+        let cooldownTime = 7 * 60 * 1000;
+
+        if (member.roles.cache.has(VIP_ROLE_ID)) {
+            cooldownTime = 3 * 60 * 1000;
+        }
+
+        // =====================
+        // COOLDOWN CHECK
+        // =====================
+        if (!bypass) {
             const expire = cooldown.get(userId);
 
-            if (now < expire) {
-
+            if (expire && now < expire) {
                 const remaining = Math.ceil((expire - now) / 1000);
 
                 return interaction.reply({
@@ -206,102 +197,7 @@ if (interaction.isButton()) {
                     ephemeral: true
                 });
             }
-
         }
-
-    }
-
-    // =====================
-    // STOCK
-    // =====================
-    const { stock, path } = getStock(interaction.customId);
-
-    if (stock.length === 0) {
-        return interaction.reply({
-            content: "❌ Plus de stock.",
-            ephemeral: true
-        });
-    }
-
-    // On récupère le compte
-    const account = stock.shift();
-
-    // Sauvegarde du stock
-    fs.writeFileSync(path, stock.join("\n"));
-
-    // =====================
-    // COOLDOWN
-    // =====================
-    if (!bypass) {
-        cooldown.set(userId, now + cooldownTime);
-    }
-
-    // =====================
-    // DM
-    // =====================
-    try {
-
-        await interaction.user.send(
-            `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
-        );
-
-    } catch {
-
-        // Si les MP sont fermés on remet le compte dans le stock
-        stock.unshift(account);
-        fs.writeFileSync(path, stock.join("\n"));
-
-        if (!bypass) {
-            cooldown.delete(userId);
-        }
-
-        return interaction.reply({
-            content: "❌ Active tes messages privés pour recevoir ton compte.",
-            ephemeral: true
-        });
-
-    }
-
-    // =====================
-    // LOGS
-    // =====================
-    const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
-
-    if (logChannel) {
-
-        logChannel.send({
-            embeds: [
-                new EmbedBuilder()
-                    .setColor("Orange")
-                    .setTitle("📦 Génération")
-                    .addFields(
-                        {
-                            name: "Utilisateur",
-                            value: interaction.user.tag,
-                            inline: true
-                        },
-                        {
-                            name: "Service",
-                            value: interaction.customId,
-                            inline: true
-                        },
-                        {
-                            name: "Compte",
-                            value: `||${account}||`
-                        }
-                    )
-                    .setTimestamp()
-            ]
-        });
-
-    }
-
-    return interaction.reply({
-        content: "📩 Ton compte a été envoyé en message privé !",
-        ephemeral: true
-    });
-
-}
 
         // =====================
         // STOCK
@@ -310,7 +206,7 @@ if (interaction.isButton()) {
 
         if (stock.length === 0) {
             return interaction.reply({
-                content: "Plus de stock.",
+                content: "❌ Plus de stock.",
                 ephemeral: true
             });
         }
@@ -319,11 +215,30 @@ if (interaction.isButton()) {
         fs.writeFileSync(path, stock.join("\n"));
 
         // =====================
-        // DM
+        // SET COOLDOWN
         // =====================
-        await interaction.user.send(
-            `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
-        ).catch(() => null);
+        if (!bypass) {
+            cooldown.set(userId, now + cooldownTime);
+        }
+
+        // =====================
+        // DM USER
+        // =====================
+        try {
+            await interaction.user.send(
+                `🎁 **${interaction.customId.toUpperCase()}**\n\`${account}\``
+            );
+        } catch {
+            stock.unshift(account);
+            fs.writeFileSync(path, stock.join("\n"));
+
+            if (!bypass) cooldown.delete(userId);
+
+            return interaction.reply({
+                content: "❌ Active tes messages privés.",
+                ephemeral: true
+            });
+        }
 
         // =====================
         // LOGS
@@ -337,7 +252,7 @@ if (interaction.isButton()) {
                         .setColor("Orange")
                         .setTitle("📦 Génération")
                         .addFields(
-                            { name: "User", value: interaction.user.tag, inline: true },
+                            { name: "Utilisateur", value: interaction.user.tag, inline: true },
                             { name: "Service", value: interaction.customId, inline: true },
                             { name: "Compte", value: `||${account}||` }
                         )
@@ -346,8 +261,12 @@ if (interaction.isButton()) {
             });
         }
 
+        return interaction.reply({
+            content: "📩 Ton compte a été envoyé en MP !",
+            ephemeral: true
+        });
     }
-);
+});
 
 // =====================
 // LOGIN

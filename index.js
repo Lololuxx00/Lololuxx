@@ -91,8 +91,9 @@ client.on(Events.InteractionCreate, async interaction => {
             );
 
             const row3 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId("disney").setLabel("Disney+").setEmoji("🏰").setStyle(ButtonStyle.Primary)
-            );
+    new ButtonBuilder().setCustomId("disney").setLabel("Disney+").setEmoji("🏰").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("paramount").setLabel("Paramount+").setEmoji("🍿").setStyle(ButtonStyle.Primary)
+);
 
             return interaction.reply({
                 embeds: [embed],
@@ -102,16 +103,16 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (interaction.commandName === "stock") {
 
-            const services = [
-                "steam",
-                "crunchyroll",
-                "adn",
-                "duolingo",
-                "otacos",
-                "deezer",
-                "disney"
-            ];
-
+        const services = [
+           "steam",
+           "crunchyroll",
+           "adn",
+           "duolingo",
+           "otacos",
+           "deezer",
+           "disney",
+           "paramount"
+];
             let desc = "";
 
             for (let s of services) {
@@ -161,14 +162,15 @@ client.on(Events.InteractionCreate, async interaction => {
 
 if (interaction.isButton()) {
     const services = [
-        "steam",
-        "crunchyroll",
-        "adn",
-        "duolingo",
-        "otacos",
-        "deezer",
-        "disney"
-    ];
+    "steam",
+    "crunchyroll",
+    "adn",
+    "duolingo",
+    "otacos",
+    "deezer",
+    "disney",
+    "paramount"
+];
 
     if (!services.includes(interaction.customId)) return;
 

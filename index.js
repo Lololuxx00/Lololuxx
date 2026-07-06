@@ -22,7 +22,6 @@ const client = new Client({
 // CONFIG
 // =====================
 const NO_COOLDOWN_ROLES = ["1523272559510945812"];
-const VIP_ROLE_ID = "1523524520860848238";
 const ADMIN_ROLE_ID = process.env.ADMIN_ROLE_ID;
 const LOG_CHANNEL_ID = process.env.LOG_CHANNEL_ID;
 const VIP_ROLE_ID = process.env.VIP_ROLE_ID;

@@ -73,6 +73,13 @@ client.on(Events.InteractionCreate, async interaction => {
 
         if (interaction.commandName === "panel") {
 
+    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+        return interaction.reply({
+            content: "🚫 Tu n'as pas la permission d'utiliser cette commande.",
+            ephemeral: true
+        });
+    }
+
             const embed = new EmbedBuilder()
                 .setColor("Blue")
                 .setTitle("⚡ Panel de génération")

@@ -209,7 +209,7 @@ if (interaction.isChatInputCommand()) {
 
         return interaction.reply({
             embeds: [embed],
-            ephemeral: true
+            ephemeral: false
         });
     }
 

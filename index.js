@@ -32,6 +32,7 @@ const VIP_ROLE_ID = process.env.VIP_ROLE_ID;
 
 const cooldown = new Map();
 const processing = new Set(); // 🔥 anti double click
+const userStats = new Map();
 
 // =====================
 // STOCK SYSTEM
@@ -63,105 +64,156 @@ client.once(Events.ClientReady, () => {
 client.on(Events.InteractionCreate, async interaction => {
 
     // =====================
-    // COMMANDS
-    // =====================
-    if (interaction.isChatInputCommand()) {
+// COMMANDS
+// =====================
+if (interaction.isChatInputCommand()) {
 
-        if (interaction.commandName === "ping") {
-            return interaction.reply("🏓 Pong !");
+    if (interaction.commandName === "ping") {
+        return interaction.reply("🏓 Pong !");
+    }
+
+    // =====================
+    // PANEL
+    // =====================
+    if (interaction.commandName === "panel") {
+
+        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+            return interaction.reply({
+                content: "🚫 Tu n'as pas la permission d'utiliser cette commande.",
+                ephemeral: true
+            });
         }
 
-        if (interaction.commandName === "panel") {
+        const embed = new EmbedBuilder()
+            .setColor("Blue")
+            .setTitle("⚡ Panel de génération")
+            .setDescription("Choisissez un service.");
 
-    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+        const row1 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId("steam").setLabel("Steam").setEmoji("🎮").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("crunchyroll").setLabel("Crunchyroll").setEmoji("📺").setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId("adn").setLabel("ADN").setEmoji("🎬").setStyle(ButtonStyle.Secondary)
+        );
+
+        const row2 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId("duolingo").setLabel("Duolingo").setEmoji("🐸").setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId("otacos").setLabel("O'Tacos").setEmoji("🌮").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("deezer").setLabel("Deezer").setEmoji("🎶").setStyle(ButtonStyle.Danger)
+        );
+
+        const row3 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId("disney").setLabel("Disney+").setEmoji("🏰").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("paramount").setLabel("Paramount+").setEmoji("🍿").setStyle(ButtonStyle.Primary)
+        );
+
         return interaction.reply({
-            content: "🚫 Tu n'as pas la permission d'utiliser cette commande.",
+            embeds: [embed],
+            components: [row1, row2, row3]
+        });
+    }
+
+    // =====================
+    // STOCK
+    // =====================
+    if (interaction.commandName === "stock") {
+
+        const services = [
+            "steam",
+            "crunchyroll",
+            "adn",
+            "duolingo",
+            "otacos",
+            "deezer",
+            "disney",
+            "paramount"
+        ];
+
+        let desc = "";
+
+        for (const s of services) {
+            const file = `./stocks/${s}.txt`;
+
+            const count = fs.existsSync(file)
+                ? fs.readFileSync(file, "utf8").split("\n").filter(Boolean).length
+                : 0;
+
+            desc += `**${s}** : ${count}\n`;
+        }
+
+        const embed = new EmbedBuilder()
+            .setColor("Green")
+            .setTitle("📊 Stock global")
+            .setDescription(desc);
+
+        return interaction.reply({ embeds: [embed] });
+    }
+
+    // =====================
+    // ADDSTOCK
+    // =====================
+    if (interaction.commandName === "addstock") {
+
+        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+            return interaction.reply({
+                content: "🚫 Tu n'as pas la permission.",
+                ephemeral: true
+            });
+        }
+
+        const service = interaction.options.getString("service").toLowerCase();
+        const stockValue = interaction.options.getString("stock");
+
+        const path = `./stocks/${service}.txt`;
+
+        fs.appendFileSync(path, stockValue + "\n");
+
+        return interaction.reply({
+            content: `✅ Stock ajouté pour **${service}**`,
             ephemeral: true
         });
     }
 
-            const embed = new EmbedBuilder()
-                .setColor("Blue")
-                .setTitle("⚡ Panel de génération")
-                .setDescription("Choisissez un service.");
+    // =====================
+    // STATS
+    // =====================
+    if (interaction.commandName === "stats") {
 
-            const row1 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId("steam").setLabel("Steam").setEmoji("🎮").setStyle(ButtonStyle.Primary),
-                new ButtonBuilder().setCustomId("crunchyroll").setLabel("Crunchyroll").setEmoji("📺").setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setCustomId("adn").setLabel("ADN").setEmoji("🎬").setStyle(ButtonStyle.Secondary)
-            );
+        const stats = userStats.get(interaction.user.id);
 
-            const row2 = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId("duolingo").setLabel("Duolingo").setEmoji("🐸").setStyle(ButtonStyle.Success),
-                new ButtonBuilder().setCustomId("otacos").setLabel("O'Tacos").setEmoji("🌮").setStyle(ButtonStyle.Primary),
-                new ButtonBuilder().setCustomId("deezer").setLabel("Deezer").setEmoji("🎶").setStyle(ButtonStyle.Danger)
-            );
-
-            const row3 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId("disney").setLabel("Disney+").setEmoji("🏰").setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId("paramount").setLabel("Paramount+").setEmoji("🍿").setStyle(ButtonStyle.Primary)
-);
-
+        if (!stats) {
             return interaction.reply({
-                embeds: [embed],
-                components: [row1, row2, row3]
-            });
-        }
-
-        if (interaction.commandName === "stock") {
-
-        const services = [
-           "steam",
-           "crunchyroll",
-           "adn",
-           "duolingo",
-           "otacos",
-           "deezer",
-           "disney",
-           "paramount"
-];
-            let desc = "";
-
-            for (let s of services) {
-                const file = `./stocks/${s}.txt`;
-
-                const count = fs.existsSync(file)
-                    ? fs.readFileSync(file, "utf8").split("\n").filter(Boolean).length
-                    : 0;
-
-                desc += `**${s}** : ${count}\n`;
-            }
-
-            const embed = new EmbedBuilder()
-                .setColor("Green")
-                .setTitle("📊 Stock global")
-                .setDescription(desc);
-
-            return interaction.reply({ embeds: [embed] });
-        }
-
-        if (interaction.commandName === "addstock") {
-
-            if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-                return interaction.reply({
-                    content: "🚫 Tu n'as pas la permission.",
-                    ephemeral: true
-                });
-            }
-
-            const service = interaction.options.getString("service").toLowerCase();
-            const stockValue = interaction.options.getString("stock");
-
-            const path = `./stocks/${service}.txt`;
-
-            fs.appendFileSync(path, stockValue + "\n");
-
-            return interaction.reply({
-                content: `✅ Stock ajouté pour **${service}**`,
+                content: "❌ Tu n'as encore effectué aucune génération.",
                 ephemeral: true
             });
         }
+
+        const favorite = Object.entries(stats.services)
+            .sort((a, b) => b[1] - a[1])[0];
+
+        const embed = new EmbedBuilder()
+            .setColor("Blue")
+            .setTitle(`📊 Statistiques de ${interaction.user.username}`)
+            .addFields(
+                {
+                    name: "📦 Générations totales",
+                    value: `${stats.total}`,
+                    inline: true
+                },
+                {
+                    name: "🏆 Service le plus généré",
+                    value: `${favorite[0]} (${favorite[1]} fois)`,
+                    inline: true
+                }
+            )
+            .setTimestamp();
+
+        return interaction.reply({
+            embeds: [embed],
+            ephemeral: true
+        });
     }
+
+}
 
 // =====================
 // BUTTONS
@@ -255,6 +307,23 @@ if (!customStatus || !customStatus.state?.includes(".gg/te6WVUgyD9")) {
 
         const account = stock.shift();
         fs.writeFileSync(path, stock.join("\n"));
+
+// =====================
+// STATS
+// =====================
+if (!userStats.has(userId)) {
+    userStats.set(userId, {
+        total: 0,
+        services: {}
+    });
+}
+
+const stats = userStats.get(userId);
+
+stats.total++;
+
+stats.services[interaction.customId] =
+    (stats.services[interaction.customId] || 0) + 1;
 
         // =====================
         // DM
